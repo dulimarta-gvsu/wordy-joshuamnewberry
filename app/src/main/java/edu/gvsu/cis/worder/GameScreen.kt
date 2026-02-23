@@ -84,7 +84,7 @@ fun GameScreen(modifier: Modifier = Modifier, viewModel: AppViewModel) {
 }
 
 @Composable
-fun BigLetter(modifier: Modifier = Modifier, letter: Char?, cellSize: Dp = 48.dp) {
+fun BigLetter(modifier: Modifier = Modifier, letter: Letter?, cellSize: Dp = 48.dp) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -96,9 +96,18 @@ fun BigLetter(modifier: Modifier = Modifier, letter: Char?, cellSize: Dp = 48.dp
             )
     ) {
         Text(
-            letter?.toString() ?: "",
-            fontSize = (cellSize * 0.7f).value.sp,
-            textAlign = TextAlign.Center
+            text = "2W"/*when {
+                (letter?.letterMultiplier ?: 1) != 1 -> "${letter!!.letterMultiplier}L"
+                (letter?.wordMultiplier ?: 1) != 1 -> "${letter!!.wordMultiplier}W"
+                else -> ""
+            }*/,
+            fontSize = (cellSize * 0.15f).value.sp,
+            modifier = Modifier.padding(1.dp).align(Alignment.TopStart),
+        )
+        Text (
+            text = (letter?.text ?: "").toString(),
+            fontSize = (cellSize * 0.6f).value.sp,
+            modifier = Modifier.align(Alignment.Center),
         )
     }
 
@@ -106,6 +115,7 @@ fun BigLetter(modifier: Modifier = Modifier, letter: Char?, cellSize: Dp = 48.dp
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
+
 fun LetterGroup(
     modifier: Modifier = Modifier, groupId: String,
     letters: List<Letter?>,
@@ -221,7 +231,7 @@ fun LetterGroup(
                 // Can't use only position as key: reordering won't work correctly
                 // Can't use only character as key: the list may contain duplicate letters
                 itemsIndexed(mutLetters, key = { pos, item -> "$pos-" + (item?.text ?: "#") }) { pos, lx ->
-                    BigLetter(letter = lx?.text, cellSize = letterSize.coerceAtMost(80.dp),
+                    BigLetter(letter = lx, cellSize = letterSize.coerceAtMost(80.dp),
                         modifier = Modifier.dragAndDropSource {
                         detectTapGestures(onLongPress = {
                             startDragIndex = pos

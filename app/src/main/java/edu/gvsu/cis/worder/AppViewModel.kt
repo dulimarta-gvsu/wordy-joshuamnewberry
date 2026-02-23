@@ -5,17 +5,62 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-data class Letter(val text: Char = '$', val point: Int = 0)
+data class Letter(val text: Char = '$', val point: Int = 0, val letterMultiplier: Int = 1, val wordMultiplier: Int = 1)
 
 enum class Origin {
     Stock, CenterBox
 }
+
+const val validWords: String = """the of to and a in is it you that he was for on are with as I his they be at one
+        have this from or had by hot but some what there we can out other were all your when up use word
+        how said an each she which do their time if will way about many then them would write like so these
+        her long make thing see him two has look more day could go come did my sound no most number who over
+        know water than call first people may down side been now find any new work part take get place made
+        live where after back little only round man year came show every good me give our under name very through
+        just form much great think say help low line before turn cause same mean differ move right boy old too
+        does tell sentence set three want air well also play small end put home read hand port large spell add
+        even land here must big high such follow act why ask men change went light kind off need house picture
+        try us again animal point mother world near build self earth father head stand own page should country
+        found answer school grow study still learn plant cover food sun four thought let keep eye never last door
+        between city tree cross since hard start might story saw far sea draw left late run don't while press
+        close night real life few stop open seem together next white children begin got walk example ease paper
+        often always music those both mark book letter until mile river car feet care second group carry took
+        rain eat room friend began idea fish mountain north once base hear horse cut sure watch color face wood
+        main enough plain girl usual young ready above ever red list though feel talk bird soon body dog family
+        direct pose leave song measure state product black short numeral class wind question happen complete
+        ship area half rock order fire south problem piece told knew pass farm top whole king size heard best
+        hour better TRUE during hundred am remember step early hold west ground interest reach fast five sing
+        listen six table travel less morning ten simple several vowel toward war lay against pattern slow center
+        love person money serve appear road map science rule govern pull cold notice voice fall power town fine
+        certain fly unit lead cry dark machine note wait plan figure star box noun field rest correct able pound
+        done beauty drive stood contain front teach week final gave green oh quick develop sleep warm free minute
+        strong special mind behind clear tail produce fact street inch lot nothing course stay wheel full force
+        blue object decide surface deep moon island foot yet busy test record boat common gold possible plane
+        age dry wonder laugh thousand ago ran check game shape yes hot miss brought heat snow bed bring sit
+        perhaps fill east weight language among """
+
+val letterPoint = mapOf('A' to 1, 'B' to 3, 'C' to 3, 'D' to 2,
+    'E' to 1, 'F' to 4, 'G' to 2, 'H' to 4, 'I' to 1, 'J' to 8, 'K' to 5, 'L' to 1,
+    'M' to 3, 'N' to 1, 'O' to 1, 'P' to 3, 'Q' to 10, 'R' to 1, 'S' to 1, 'T' to 1,
+    'U' to 1, 'V' to 4, 'W' to 4, 'X' to 8, 'Y' to 4, 'Z' to 10)
 
 class AppViewModel: ViewModel() {
     private val _sourceLetters = MutableStateFlow(emptyList<Letter?>())
     val sourceLetters = _sourceLetters.asStateFlow()
     private val _targetLetters = MutableStateFlow(emptyList<Letter?>())
     val targetLetters = _targetLetters.asStateFlow()
+
+    private val _totalScore = MutableStateFlow(0)
+    val totalScore = _totalScore.asStateFlow()
+    private val _currentScore = MutableStateFlow(0)
+    val currentScore = _currentScore.asStateFlow()
+
+    private val _numWords = MutableStateFlow(0)
+    val numWords = _numWords.asStateFlow()
+
+    private val _successfulWords = mutableListOf<String>()
+
+
     init {
         selectRandomLetters()
     }
@@ -26,16 +71,21 @@ class AppViewModel: ViewModel() {
             val vowels = (1..6).map {
                 "AEIOU".random()
             }
-            val consontants = (1..4).map {
-                "BCFGHJKLMNPQRSTVWXYZ".random()
+            val consonants = (1..4).map {
+                "BCDFGHJKLMNPQRSTVWXYZ".random()
             }
-            (vowels + consontants).map {
-                Letter(it)
+            (vowels + consonants).map {
+                val multiplierEnabled = "1000000000".random().toInt()
+                val letterEnabled = "10".random().toInt()
+                Letter(
+                    text = it, point = letterPoint[it]!!,
+                    letterMultiplier = "23".random().toInt() * multiplierEnabled * letterEnabled,
+                    wordMultiplier = "23".random().toInt() * multiplierEnabled * (1 - letterEnabled)
+                )
             }.shuffled()
         }
         _targetLetters.update { emptyList() }
     }
-
 
     fun rearrangeLetters(group: Origin, arr: List<Letter>) {
         when (group) {
@@ -51,5 +101,23 @@ class AppViewModel: ViewModel() {
                 }
             }
         }
+    }
+
+    fun returnString(): String {
+        var res = ""
+        for (char in _targetLetters.value)
+            res += char!!.text
+        return res
+    }
+
+    fun isValidWord(): Boolean {
+        val word = returnString()
+        return word in validWords && word !in _successfulWords
+    }
+
+    fun validWordCreated(word: String) {
+        _numWords.update { _numWords.value + 1 }
+        _totalScore.update { _totalScore.value + _currentScore.value }
+        _successfulWords.add(word)
     }
 }
