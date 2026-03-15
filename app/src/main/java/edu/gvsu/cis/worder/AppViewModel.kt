@@ -11,11 +11,11 @@ enum class Origin {
     Stock, CenterBox
 }
 
-const val validWords: String = """the of to and a in is it you that he was for on are with as I his they be at one
-        have this from or had by hot but some what there we can out other were all your when up use word
-        how said an each she which do their time if will way about many then them would write like so these
+val validWords: List<String> = """the of to too and in is it you that he was for on are with as his they be at one
+        have this from or had by hot but some what there we can out other were all your when up use word zap
+        how said an each she which do their time if will way about many then them would write like so these fin
         her long make thing see him two has look more day could go come did my sound no most number who over
-        know water than call first people may down side been now find any new work part take get place made
+        know water than call first people may down side been now find any new work part take get place made fix
         live where after back little only round man year came show every good me give our under name very through
         just form much great think say help low line before turn cause same mean differ move right boy old too
         does tell sentence set three want air well also play small end put home read hand port large spell add
@@ -27,17 +27,20 @@ const val validWords: String = """the of to and a in is it you that he was for o
         often always music those both mark book letter until mile river car feet care second group carry took
         rain eat room friend began idea fish mountain north once base hear horse cut sure watch color face wood
         main enough plain girl usual young ready above ever red list though feel talk bird soon body dog family
-        direct pose leave song measure state product black short numeral class wind question happen complete
+        direct pose leave song measure state product black short numeral class wind question happen complete quac
         ship area half rock order fire south problem piece told knew pass farm top whole king size heard best
-        hour better TRUE during hundred am remember step early hold west ground interest reach fast five sing
+        hour better true false during hundred am remember step early hold west ground interest reach fast five sing
         listen six table travel less morning ten simple several vowel toward war lay against pattern slow center
         love person money serve appear road map science rule govern pull cold notice voice fall power town fine
         certain fly unit lead cry dark machine note wait plan figure star box noun field rest correct able pound
         done beauty drive stood contain front teach week final gave green oh quick develop sleep warm free minute
         strong special mind behind clear tail produce fact street inch lot nothing course stay wheel full force
-        blue object decide surface deep moon island foot yet busy test record boat common gold possible plane
-        age dry wonder laugh thousand ago ran check game shape yes hot miss brought heat snow bed bring sit
-        perhaps fill east weight language among """
+        blue object decide surface deep moon island foot yet busy test record boat common gold possible plane fog
+        age dry wonder laugh thousand ago ran check game shape yes hot miss brought heat snow bed bring sit vace
+        perhaps fill east weight language among mug cat desk phone window wall floor jump happy sad tall clean dirty
+        nose mouth ear leg arm shoe hat coat bus train cup plate bowl fork spoon knife bread cheese milk juice apple
+        grape orange yellow purple brown pink gray bad job win lose fun pop mom dad kid toy sky cloud ice cool sweet
+        sour taste smell touch soft loud quiet smart nice rich poor glad mad nag boo gay pal lap muk bug sue urn""".lowercase().split(" ")
 
 val letterPoint = mapOf('A' to 1, 'B' to 3, 'C' to 3, 'D' to 2,
     'E' to 1, 'F' to 4, 'G' to 2, 'H' to 4, 'I' to 1, 'J' to 8, 'K' to 5, 'L' to 1,
@@ -75,30 +78,27 @@ class AppViewModel: ViewModel() {
                 "BCDFGHJKLMNPQRSTVWXYZ".random()
             }
             (vowels + consonants).map {
-                val multiplierEnabled = "1000000000".random().toInt()
-                val letterEnabled = "10".random().toInt()
+                val multiplierEnabled = listOf(1,0,0,0,0,0,0,0,0,0).random()
+                val letterEnabled = listOf(1,0).random()
                 Letter(
                     text = it, point = letterPoint[it]!!,
-                    letterMultiplier = "23".random().toInt() * multiplierEnabled * letterEnabled,
-                    wordMultiplier = "23".random().toInt() * multiplierEnabled * (1 - letterEnabled)
+                    letterMultiplier = if (multiplierEnabled == 1 && letterEnabled == 1) listOf(2, 2, 3, 3, 4).random() else 1,
+                    wordMultiplier = if (multiplierEnabled == 1 && letterEnabled == 0) listOf(2, 2, 3, 3, 4).random() else 1
                 )
             }.shuffled()
         }
         _targetLetters.update { emptyList() }
+        _currentScore.update { 0 }
     }
 
     fun rearrangeLetters(group: Origin, arr: List<Letter>) {
         when (group) {
             Origin.Stock -> {
-                _sourceLetters.update {
-                    arr
-                }
+                _sourceLetters.update { arr }
             }
-
             Origin.CenterBox -> {
-                _targetLetters.update {
-                    arr
-                }
+                _targetLetters.update { arr }
+                calculateScore()
             }
         }
     }
@@ -111,13 +111,38 @@ class AppViewModel: ViewModel() {
     }
 
     fun isValidWord(): Boolean {
-        val word = returnString()
+        val word = returnString().lowercase()
         return word in validWords && word !in _successfulWords
     }
 
-    fun validWordCreated(word: String) {
+    fun validWordCreated() {
+        val word = returnString().lowercase()
         _numWords.update { _numWords.value + 1 }
         _totalScore.update { _totalScore.value + _currentScore.value }
         _successfulWords.add(word)
+
+        _targetLetters.update { emptyList() }
+        _currentScore.update { 0 }
     }
+
+    fun shuffleLetters() {
+        _sourceLetters.update { it.shuffled() }
+    }
+
+    fun calculateScore() {
+        if (isValidWord()) {
+            var baseScore = 0
+            var totalWordMultiplier = 1
+
+            _targetLetters.value.filterNotNull().forEach { letter ->
+                baseScore += (letter.point * letter.letterMultiplier)
+                totalWordMultiplier *= letter.wordMultiplier
+            }
+
+            _currentScore.update { baseScore * totalWordMultiplier }
+        } else {
+            _currentScore.update { 0 }
+        }
+    }
+
 }
